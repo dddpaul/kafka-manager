@@ -45,7 +45,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import org.apache.kafka.clients.consumer.ConsumerConfig._
 import org.apache.kafka.clients.consumer.internals.ConsumerProtocol
-import org.apache.kafka.common.config.SaslConfigs
+import org.apache.kafka.common.config.{SaslConfigs, SslConfigs}
 import org.apache.kafka.common.protocol.Errors
 import org.apache.kafka.clients.CommonClientConfigs.SECURITY_PROTOCOL_CONFIG
 
@@ -266,6 +266,8 @@ case class KafkaManagedOffsetCache(clusterContext: ClusterContext
       cp => props.putAll(cp)
     }
     props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, clusterContext.config.securityProtocol.stringId)
+    props.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG,
+      consumerProperties.get(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG).orElse(""))
     if(clusterContext.config.saslMechanism.nonEmpty){
       props.put(SaslConfigs.SASL_MECHANISM, clusterContext.config.saslMechanism.get.stringId)
       info(s"SASL Mechanism =${clusterContext.config.saslMechanism.get}")
@@ -1480,6 +1482,9 @@ class KafkaStateActor(config: KafkaStateActorConfig) extends BaseClusterQueryCom
                 if(kaConfig.clusterContext.config.saslMechanism.nonEmpty){
                   consumerProperties.put(SaslConfigs.SASL_MECHANISM, kaConfig.clusterContext.config.saslMechanism.get.stringId)
                   log.info(s"SASL Mechanism =${kaConfig.clusterContext.config.saslMechanism.get}")
+                  consumerProperties.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG,
+                    kaConfig.consumerProperties.get(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG).orElse(""))
+                  log.info(s"SSL verification mechanism =${consumerProperties.getProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG)}")
                 }
                 if(kaConfig.clusterContext.config.jaasConfig.nonEmpty){
                   consumerProperties.put(SaslConfigs.SASL_JAAS_CONFIG, kaConfig.clusterContext.config.jaasConfig.get)
